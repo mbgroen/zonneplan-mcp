@@ -1,28 +1,41 @@
 name: Release
 
-# Bij elke gepubliceerde release: bouw de MCP-bundel met het versienummer uit de tag
-# en voeg zonneplan-<versie>.mcpb toe aan de assets van die release.
+# Een nieuwe release start op twee manieren:
+#   1. Een tag pushen:   git tag v1.2.3 && git push origin v1.2.3
+#      → de workflow maakt de release automatisch aan (titel, release notes, installatie-instructies)
+#   2. Een release publiceren via GitHub (Releases → Draft a new release → Publish)
+# In beide gevallen wordt de MCP-bundel gebouwd met het versienummer uit de tag en
+# als zonneplan-<versie>.mcpb aan de release toegevoegd.
 on:
+  push:
+    tags: ["v*.*.*"]
   release:
     types: [published]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Bestaande release-tag om (opnieuw) te bouwen, bijv. v1.0.0"
+        description: "Bestaande tag om (opnieuw) te bouwen, bijv. v1.0.0"
         required: true
 
 permissions:
   contents: write
 
+# Een release via de GitHub-website maakt ook de tag aan, waardoor beide triggers kunnen afgaan.
+# Per tag draait er daarom maar één job tegelijk; de tweede werkt alleen de asset bij.
+concurrency:
+  group: release-${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   mcpb:
     runs-on: ubuntu-latest
     env:
-      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      TAG: ${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          ref: ${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
 
       - uses: actions/setup-node@v7
         with:
@@ -47,7 +60,24 @@ jobs:
           mv zonneplan.mcpb "zonneplan-${VERSION}.mcpb"
           npx mcpb info "zonneplan-${VERSION}.mcpb"
 
-      - name: Toevoegen aan release
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Release aanmaken (als die nog niet bestaat)
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG bestaat al."
+            exit 0
+          fi
+          cat > notes.md <<EOF
+          ## Installeren
+          1. Download **zonneplan-${VERSION}.mcpb** hieronder bij *Assets*.
+          2. Dubbelklik op het bestand (of sleep het naar Claude Desktop → Instellingen → Extensies) en vul het e-mailadres van je Zonneplan-account in.
+          3. Vraag Claude: *"Log in bij Zonneplan"*. Zonneplan mailt je een 6-cijferige code, die geef je aan Claude.
+
+          Bijwerken vanaf een eerdere versie: installeer het nieuwe bestand gewoon over de oude extensie heen. Je blijft ingelogd.
+
+          Zie de [README](https://github.com/${GITHUB_REPOSITORY}#readme) voor de volledige documentatie.
+          EOF
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "$TAG" --notes "$(cat notes.md)" --generate-notes
+
+      - name: Bundel toevoegen aan release
         run: gh release upload "$TAG" "zonneplan-${VERSION}.mcpb" --clobber --repo "$GITHUB_REPOSITORY"

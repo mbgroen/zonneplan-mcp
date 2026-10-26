@@ -270,25 +270,27 @@ npm run pack    # build + manifest valideren + zonneplan.mcpb maken
 
 ## Een nieuwe release maken
 
-De workflow `.github/workflows/release.yml` draait bij elke **gepubliceerde release**:
+Een release maken is één handeling; de rest doet `.github/workflows/release.yml` vanzelf.
 
-1. Hij leest het versienummer uit de tag (`v1.2.3` → `1.2.3`) en zet het in `package.json` en `manifest.json`.
-2. Hij installeert de dependencies, draait de tests en bouwt de bundel.
-3. Hij voegt `zonneplan-1.2.3.mcpb` toe aan de assets van de release.
-
-Een release maken:
+**Optie 1: een tag pushen** (de release wordt automatisch aangemaakt)
 
 ```bash
 git tag v1.2.3
 git push origin v1.2.3
-gh release create v1.2.3 --title "v1.2.3" --generate-notes
 ```
 
-Of via GitHub: **Releases → Draft a new release**, kies of maak een tag en klik op **Publish release**. Na een minuut of twee staat de `.mcpb` bij de assets.
+**Optie 2: via GitHub.** Ga naar **Releases → Draft a new release**, typ een nieuwe tag (bijv. `v1.2.3`) en klik op **Publish release**.
 
-Ging er iets mis, dan kun je de workflow opnieuw draaien via **Actions → Release → Run workflow** met de bestaande tag.
+Daarna doet de workflow automatisch het volgende:
 
-Werk het versienummer in `package.json` en `bundle/manifest.json` gerust ook bij in de commit (`node scripts/set-version.cjs 1.2.3`). De workflow gebruikt hoe dan ook de tag.
+1. Hij leest het versienummer uit de tag (`v1.2.3` → `1.2.3`) en zet het in `package.json` en `manifest.json`.
+2. Hij installeert de dependencies, draait de tests en bouwt de bundel. Mislukt een test, dan komt er geen release.
+3. Bestaat de release nog niet (optie 1), dan maakt hij hem aan, met installatie-instructies en automatisch gegenereerde release notes.
+4. Hij voegt `zonneplan-1.2.3.mcpb` toe aan de assets van de release.
+
+Na een paar minuten staat de release met de download klaar. Ging er iets mis, dan kun je de workflow opnieuw draaien via **Actions → Release → Run workflow** met de bestaande tag.
+
+Werk het versienummer in `package.json` en `bundle/manifest.json` gerust ook bij in een commit (`node scripts/set-version.cjs 1.2.3`). De workflow gebruikt hoe dan ook de tag.
 
 ---
 
