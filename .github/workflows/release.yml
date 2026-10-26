@@ -1,0 +1,53 @@
+name: Release
+
+# Bij elke gepubliceerde release: bouw de MCP-bundel met het versienummer uit de tag
+# en voeg zonneplan-<versie>.mcpb toe aan de assets van die release.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Bestaande release-tag om (opnieuw) te bouwen, bijv. v1.0.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  mcpb:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Versie uit tag overnemen
+        run: |
+          VERSION="${TAG#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          node scripts/set-version.cjs "$VERSION"
+
+      - name: Dependencies installeren
+        run: npm ci
+
+      - name: Testen
+        run: npm test
+
+      - name: Bundel bouwen
+        run: |
+          npm run pack
+          mv zonneplan.mcpb "zonneplan-${VERSION}.mcpb"
+          npx mcpb info "zonneplan-${VERSION}.mcpb"
+
+      - name: Toevoegen aan release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" "zonneplan-${VERSION}.mcpb" --clobber --repo "$GITHUB_REPOSITORY"

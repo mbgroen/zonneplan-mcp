@@ -1,0 +1,110 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/dist/mcpb-manifest.schema.json",
+  "manifest_version": "0.3",
+  "name": "zonneplan",
+  "display_name": "Zonneplan (onofficieel)",
+  "version": "1.0.0",
+  "description": "Bekijk je Zonneplan-stroomverbruik, teruglevering, gas, zonnepanelen, thuisbatterij en dynamische prijzen in Claude.",
+  "long_description": "Onofficiële, alleen-lezen koppeling met de Zonneplan app-API (dezelfde API als de Zonneplan-app).\n\n**Wat kun je vragen?**\n- Actueel verbruik en teruglevering via de P1-meter (Zonneplan Connect)\n- Verbruik, teruglevering en kosten per uur, dag, maand en jaar\n- Gasverbruik en -kosten\n- Opbrengst van je zonnepanelen\n- Thuisbatterij: laadniveau, sturingsmodus en Powerplay-opbrengst\n- Dynamische stroom- en gasprijzen voor vandaag en morgen\n\n**Inloggen** gaat net als in de app: Claude vraagt een code aan, Zonneplan mailt je een 6-cijferige code en die geef je aan Claude. De tokens worden alleen lokaal opgeslagen in `~/.zonneplan-mcp/tokens.json`.\n\nGebaseerd op het werk van biemond/nl.zonneplan (Homey) en fsaris/home-assistant-zonneplan-one. Niet gelieerd aan of goedgekeurd door Zonneplan.",
+  "author": {
+    "name": "Michiel"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mbgroen/zonneplan-mcp"
+  },
+  "homepage": "https://github.com/mbgroen/zonneplan-mcp",
+  "support": "https://github.com/mbgroen/zonneplan-mcp/issues",
+  "icon": "icon.png",
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.cjs",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/server/index.cjs"
+      ],
+      "env": {
+        "ZONNEPLAN_EMAIL": "${user_config.email}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "zonneplan_status",
+      "description": "Inlogstatus en overzicht van adres, aansluitingen en installaties"
+    },
+    {
+      "name": "zonneplan_login_start",
+      "description": "Inloggen stap 1: laat Zonneplan een 6-cijferige code mailen"
+    },
+    {
+      "name": "zonneplan_login_complete",
+      "description": "Inloggen stap 2: code invoeren en sessie opslaan"
+    },
+    {
+      "name": "zonneplan_logout",
+      "description": "Lokaal opgeslagen tokens verwijderen"
+    },
+    {
+      "name": "zonneplan_live",
+      "description": "Actuele waarden: P1-vermogen, zonnepanelen, thuisbatterij"
+    },
+    {
+      "name": "zonneplan_electricity",
+      "description": "Stroomverbruik, teruglevering en kosten (overzicht of per uur/dag/maand)"
+    },
+    {
+      "name": "zonneplan_gas",
+      "description": "Gasverbruik en kosten"
+    },
+    {
+      "name": "zonneplan_solar",
+      "description": "Opbrengst en status van de zonnepanelen"
+    },
+    {
+      "name": "zonneplan_battery",
+      "description": "Thuisbatterij: laadniveau, sturing en Powerplay-opbrengst"
+    },
+    {
+      "name": "zonneplan_charge_point",
+      "description": "Status van de Zonneplan-laadpaal"
+    },
+    {
+      "name": "zonneplan_prices",
+      "description": "Dynamische stroom- en gasprijzen (vandaag/morgen)"
+    },
+    {
+      "name": "zonneplan_api_get",
+      "description": "Geavanceerd: ruwe GET-aanroep op de Zonneplan-API"
+    }
+  ],
+  "keywords": [
+    "zonneplan",
+    "energie",
+    "p1",
+    "zonnepanelen",
+    "thuisbatterij",
+    "dynamische prijzen",
+    "teruglevering"
+  ],
+  "license": "GPL-3.0-or-later",
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  },
+  "user_config": {
+    "email": {
+      "type": "string",
+      "title": "E-mailadres Zonneplan-account",
+      "description": "Het e-mailadres waarmee je inlogt in de Zonneplan-app. Zonneplan stuurt hier de 6-cijferige inlogcode naartoe.",
+      "required": true
+    }
+  }
+}

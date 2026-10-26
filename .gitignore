@@ -1,0 +1,5 @@
+node_modules/
+bundle/server/
+*.mcpb
+.DS_Store
+*.log
